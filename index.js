@@ -3,19 +3,34 @@ const axios = require('axios');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const OPENWEATHERMAP_API_KEY = '045d22c917a325e8b4c2855770ec9f4e';
+
 app.get('/api/hello', async (req, res) => {
   const visitor = req.query.visitor_name || 'Guest';
   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
+
+  
   try {
     // Fetch location data from ip-api.com
-    const response = await axios.get(`http://ip-api.com/json/${clientIp}`);
-    const locationData = response.data;
+    const locationResponse = await axios.get(`http://ip-api.com/json/${clientIp}`);
+    const locationData = locationResponse.data;
 
     if (locationData.status === 'success') {
       const { country, city, lat, lon } = locationData;
       const location = `${city}, ${country}`;
-      const temperature = '28°C'; // For simplicity, using a fixed temperature
+
+      // Fetch temperature data from OpenWeatherMap
+      const weatherResponse = await axios.get(`http://api.openweathermap.org/data/2.5/weather`, {
+        params: {
+          lat,
+          lon,
+          appid: OPENWEATHERMAP_API_KEY,
+          units: 'metric' 
+        }
+      });
+      const weatherData = weatherResponse.data;
+      const temperature = `${weatherData.main.temp}°C`;
 
       res.json({
         client_ip: clientIp,
